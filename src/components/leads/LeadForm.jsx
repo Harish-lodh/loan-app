@@ -9,7 +9,7 @@ import XIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/CheckCircleOutline';
 import Select from 'react-select';
 import customSelectStyles from '../../utils/CustomCss';
-import { getKycOcrData, panVerify, sendDocumenstsDetails, getleadfield } from '../../api/api';
+import { getKycOcrData, panVerify, sendDocumenstsDetails } from '../../api/api';
 import { toast } from 'react-toastify';
 import Loader from './FadeLoaderCustom';
 import { convertToDateInputFormat } from '../../utils/dateUtils';
@@ -101,25 +101,23 @@ const LeadForm = () => {
     panDob: '',
   });
   const [formData, setFormData] = useState({
-    // leadImage: null,
-    // leadOwner: "",
-    // firstName: "",
-    // lastName: "",
-    // email: "",
-    // mobile: "",
-    // company: "",
-    // street: "",
-    // city: "",
-    // state: "",
-    // country: "",
-    // zipCode: "",
-    // description: "",
+    leadImage: null,
+    leadOwner: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    mobile: "",
+    company: "",
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    zipCode: "",
+    description: "",
   });
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [file, setFile] = useState(null);
   const [documentsMeta, setdocumentsMeta] = useState([]);
-  const [columns, setColumns] = useState([]); // Initialize as empty array
-  const [loading, setLoading] = useState(false);
 
   // Define tabs array
   const tabs = [
@@ -136,43 +134,15 @@ const LeadForm = () => {
     { value: 'property_documents', label: 'Property Documents' },
   ];
 
-  // Fields to exclude from the form
-  const EXCLUDED_FIELDS = new Set(['id', 'customdata', 'kycid', 'leadimagepath']);
-  // Group fields into Basic Information and Address
-  const basicFields = new Set(['leadowner', 'firstname', 'lastname', 'email', 'mobile', 'company']);
-  const addressFields = new Set(['street', 'city', 'state', 'country', 'zipcode']);
-  // natural API order -> ['leadOwner','firstName', ...]
-  const apiOrder = columns.map(c => c.name.toLowerCase());
-  const rank = new Map(apiOrder.map((n, i) => [n, i]));
-  const sortByApiOrder = (a, b) =>
-    (rank.get(a.name.toLowerCase()) ?? 1e9) - (rank.get(b.name.toLowerCase()) ?? 1e9);
-
-
-
-  // Filter and map columns to form fields
-  const formFields = columns.filter(
-    (col) => !EXCLUDED_FIELDS.has(col.name.toLowerCase())
-  );
-
-  // Determine input type based on column dbType
-  // const getInputType = (dbType) => {
-  //   switch (dbType.toUpperCase()) {
-  //     case 'CHARACTER VARYING':
-  //       return 'text';
-  //     case 'TEXT':
-  //       return 'textarea';
-  //     case 'NUMERIC':
-  //       return 'number';
-  //     case 'INTEGER':
-  //       return 'number';
-  //     case 'DATE':
-  //       return 'date';
-  //     case 'UUID':
-  //       return 'text';
-  //     default:
-  //       return 'text';
-  //   }
-  // };
+  // Static fields definition
+  const staticBasicFields = [
+    { name: 'leadOwner', label: 'Lead Owner', type: 'text', required: false },
+    { name: 'firstName', label: 'First Name', type: 'text', required: true },
+    { name: 'lastName', label: 'Last Name', type: 'text', required: true },
+    { name: 'email', label: 'Email', type: 'email', required: true },
+    { name: 'mobile', label: 'Mobile', type: 'tel', required: true },
+    { name: 'company', label: 'Company', type: 'text', required: false },
+  ];
 
   // Memoize handlers
   const handleFormDataChange = useCallback((e) => {
@@ -314,37 +284,11 @@ const LeadForm = () => {
     fetchPanOCR();
   }, [panExtract, kycData.pan]);
 
-  const fetchColumns = async () => {
-    setLoading(true);
-    try {
-      const { data } = await getleadfield();
-      console.log('API response:', data);
-      setColumns(Array.isArray(data) ? data : []);
-      // Initialize formData with dynamic fields
-      const initialFormData = data.reduce((acc, col) => ({
-        ...acc,
-        [col.name]: '',
-      }), { ...formData, leadImage: null });
-      setFormData(initialFormData);
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to load fields");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'basic') {
-      fetchColumns();
-    }
-  }, [activeTab]);
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">Create Lead</h1>
+          <h1 className="text-3xl font-bold text-blue-900 mb-2">Onboard Dealers</h1>
         </div>
         <div className="flex justify-center mb-8">
           <div className="flex bg-white rounded-lg p-1 border-gray-300 border-2">
@@ -371,114 +315,65 @@ const LeadForm = () => {
             {activeTab === 'basic' && (
               <div className="bg-white rounded-xl border-gray-300 border-2 p-6 space-y-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Basic Information</h2>
-                {loading ? (
-                  <div className="flex items-center justify-center min-h-[160px]">
-                    <Loader />
-                  </div>
-                ) : (
-                  <>
-                    {/* File Upload for leadImage */}
-                    <div className="flex items-center space-x-4">
-                      {formData.leadImage ? (
-                        <img
-                          src={URL.createObjectURL(formData.leadImage)}
-                          alt="Profile"
-                          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                          <UserIcon className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                      <div>
-                        <input
-                          type="file"
-                          onChange={handleImageChange}
-                          accept="image/*"
-                          className="hidden"
-                          id="profile-upload"
-                        />
-                        <label
-                          htmlFor="profile-upload"
-                          className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer transition-colors"
-                        >
-                          <UploadIcon className="w-4 h-4 mr-1" />
-                          Upload Photo
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Basic Information Fields */}
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {formFields
-                        .filter((col) => basicFields.has(col.name.toLowerCase()))
-                        .sort(sortByApiOrder)
-                        .map((col) => (
-                          <InputField
-                            key={col.name}
-                            label={col.name.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
-                            name={col.name}
-                            type={getInputType(col.dbType)}
-                            value={formData[col.name] || ''}
-                            onChange={handleFormDataChange}
-                            required={!col.isNullable}
-                          />
-                        ))}
-                      {/* Include dynamic fields not in basicFields but not in addressFields or description */}
-                      {formFields
-                        .filter(
-                          (col) =>
-                            !basicFields.has(col.name.toLowerCase()) &&
-                            !addressFields.has(col.name.toLowerCase()) &&
-                            col.name.toLowerCase() !== 'description'
-                        )
-                        .sort(sortByApiOrder)
-                        .map((col) => (
-                          <InputField
-                            key={col.name}
-                            label={col.name.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
-                            name={col.name}
-                            type={getInputType(col.dbType)}
-                            value={formData[col.name] || ''}
-                            onChange={handleFormDataChange}
-                            required={!col.isNullable}
-                          />
-                        ))}
-                    </div>
-
-                    {/* Address Fields */}
-                    {/* <h3 className="text-lg font-medium text-gray-800 mt-6">Address</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {formFields
-                        .filter((col) => addressFields.has(col.name.toLowerCase()))
-                        .map((col) => (
-                          <InputField
-                            key={col.name}
-                            label={col.name.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}
-                            name={col.name}
-                            type={getInputType(col.dbType)}
-                            value={formData[col.name] || ''}
-                            onChange={handleFormDataChange}
-                            required={!col.isNullable}
-                          />
-                        ))}
-                    </div> */}
-
-                    {/* Description Field (Textarea) */}
-                    {formFields.some((col) => col.name.toLowerCase() === 'description') && (
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-700">Description</label>
-                        <InputField
-                          name="description"
-                          type="textarea"
-                          value={formData.description || ''}
-                          onChange={handleFormDataChange}
-                          required={formFields.find((col) => col.name.toLowerCase() === 'description')?.isNullable === false}
-                        />
+                <>
+                  {/* File Upload for leadImage */}
+                  <div className="flex items-center space-x-4">
+                    {formData.leadImage ? (
+                      <img
+                        src={URL.createObjectURL(formData.leadImage)}
+                        alt="Profile"
+                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                        <UserIcon className="w-8 h-8 text-gray-400" />
                       </div>
                     )}
-                  </>
-                )}
+                    <div>
+                      <input
+                        type="file"
+                        onChange={handleImageChange}
+                        accept="image/*"
+                        className="hidden"
+                        id="profile-upload"
+                      />
+                      <label
+                        htmlFor="profile-upload"
+                        className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg cursor-pointer transition-colors"
+                      >
+                        <UploadIcon className="w-4 h-4 mr-1" />
+                        Upload Photo
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Basic Information Fields */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {staticBasicFields.map((field) => (
+                      <InputField
+                        key={field.name}
+                        label={field.label}
+                        name={field.name}
+                        type={field.type}
+                        value={formData[field.name] || ''}
+                        onChange={handleFormDataChange}
+                        required={field.required}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Description Field (Textarea) */}
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Description</label>
+                    <InputField
+                      name="description"
+                      type="textarea"
+                      value={formData.description || ''}
+                      onChange={handleFormDataChange}
+                      required={false}
+                    />
+                  </div>
+                </>
               </div>
             )}
             {activeTab === 'kyc' && (
