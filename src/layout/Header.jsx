@@ -64,7 +64,7 @@ const Header = ({ toggleSidebar, isSidebarOpen }) => {
         <div className="flex items-center gap-2 sm:gap-3">
           <img src={logo} alt="Fintree" className="h-8 w-auto object-contain" />
           <h1 className="text-sm sm:text-base font-bold text-gray-800 hidden sm:block">
-            Loan Origination System
+            CRM
           </h1>
         </div>
       </div>
