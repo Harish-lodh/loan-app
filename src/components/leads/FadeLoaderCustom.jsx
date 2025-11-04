@@ -1,11 +1,9 @@
-
 import "../../FadeLoader.css"; // your CSS
-
 
 export default function Loader({
   size = 80,
   color,
-  spokes = 8,       // use 12 to match the screenshot; 8 also works
+  spokes = 8, // use 12 to match the screenshot; 8 also works
   duration = 0.9,
   className = "",
 }) {

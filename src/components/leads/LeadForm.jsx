@@ -1,62 +1,72 @@
 // src/pages/LeadForm.jsx
-import React, { useState, useCallback, useEffect } from 'react';
-import UploadIcon from '@mui/icons-material/CloudUploadOutlined';
-import UserIcon from '@mui/icons-material/PersonOutline';
-import CreditCardIcon from '@mui/icons-material/CreditCardOutlined';
-import FileTextIcon from '@mui/icons-material/InsertDriveFileOutlined';
-import PlusIcon from '@mui/icons-material/Add';
-import XIcon from '@mui/icons-material/Close';
-import CheckIcon from '@mui/icons-material/CheckCircleOutline';
-import Select from 'react-select';
-import customSelectStyles from '../../utils/CustomCss';
-import { getKycOcrData, panVerify, sendDocumenstsDetails } from '../../api/api';
-import { toast } from 'react-toastify';
-import Loader from './FadeLoaderCustom';
-import { convertToDateInputFormat } from '../../utils/dateUtils';
-import { getInputType } from '../../utils/index'
+import React, { useState, useCallback, useEffect } from "react";
+import UploadIcon from "@mui/icons-material/CloudUploadOutlined";
+import UserIcon from "@mui/icons-material/PersonOutline";
+import CreditCardIcon from "@mui/icons-material/CreditCardOutlined";
+import FileTextIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import PlusIcon from "@mui/icons-material/Add";
+import XIcon from "@mui/icons-material/Close";
+import CheckIcon from "@mui/icons-material/CheckCircleOutline";
+import Select from "react-select";
+import customSelectStyles from "../../utils/CustomCss";
+import { getKycOcrData, panVerify, sendDocumenstsDetails } from "../../api/api";
+import { toast } from "react-toastify";
+import Loader from "./FadeLoaderCustom";
+import { convertToDateInputFormat } from "../../utils/dateUtils";
+import { getInputType } from "../../utils/index";
 
 // Memoized InputField to prevent unnecessary re-renders
-const InputField = React.memo(({ label, name, type = "text", value, onChange, required = false, options = null }) => {
-  return (
-    <div className="flex flex-col">
-      <label className="text-sm mb-2 font-medium text-gray-700">
-        {label} {required && <span className="text-red-400">*</span>}
-      </label>
-      {options ? (
-        <Select
-          name={name}
-          value={options.find(option => option.value === value)}
-          onChange={(selectedOption) =>
-            onChange({ target: { name, value: selectedOption?.value || '' } })
-          }
-          options={options}
-          className="react-select-container"
-          classNamePrefix="react-select"
-          styles={customSelectStyles}
-          isClearable
-        />
-      ) : type === 'textarea' ? (
-        <textarea
-          name={name}
-          value={value || ''}
-          onChange={onChange}
-          rows={3}
-          className="w-full px-3 py-2 border-gray-300 rounded-md border-2 transition-all focus:border-gray-500 focus:border-2 focus:outline-none"
-          required={required}
-        />
-      ) : (
-        <input
-          type={type}
-          name={name}
-          value={value || ''}
-          onChange={onChange}
-          className="w-full px-3 py-2 border-gray-300 rounded-md border-2 transition-all focus:border-gray-500 focus:border-2 focus:outline-none"
-          required={required}
-        />
-      )}
-    </div>
-  );
-});
+const InputField = React.memo(
+  ({
+    label,
+    name,
+    type = "text",
+    value,
+    onChange,
+    required = false,
+    options = null,
+  }) => {
+    return (
+      <div className="flex flex-col">
+        <label className="text-sm mb-2 font-medium text-gray-700">
+          {label} {required && <span className="text-red-400">*</span>}
+        </label>
+        {options ? (
+          <Select
+            name={name}
+            value={options.find((option) => option.value === value)}
+            onChange={(selectedOption) =>
+              onChange({ target: { name, value: selectedOption?.value || "" } })
+            }
+            options={options}
+            className="react-select-container"
+            classNamePrefix="react-select"
+            styles={customSelectStyles}
+            isClearable
+          />
+        ) : type === "textarea" ? (
+          <textarea
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            rows={3}
+            className="w-full px-3 py-2 border-gray-300 rounded-md border-2 transition-all focus:border-gray-500 focus:border-2 focus:outline-none"
+            required={required}
+          />
+        ) : (
+          <input
+            type={type}
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            className="w-full px-3 py-2 border-gray-300 rounded-md border-2 transition-all focus:border-gray-500 focus:border-2 focus:outline-none"
+            required={required}
+          />
+        )}
+      </div>
+    );
+  }
+);
 
 const FileUpload = ({ label, file, onChange, accept = "image/*" }) => (
   <div className="relative group">
@@ -66,7 +76,13 @@ const FileUpload = ({ label, file, onChange, accept = "image/*" }) => (
       accept={accept}
       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
     />
-    <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 ${file ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50 group-hover:border-blue-400 group-hover:bg-blue-50'}`}>
+    <div
+      className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-200 ${
+        file
+          ? "border-green-300 bg-green-50"
+          : "border-gray-300 bg-gray-50 group-hover:border-blue-400 group-hover:bg-blue-50"
+      }`}
+    >
       {file ? (
         <div className="space-y-2">
           <CheckIcon className="w-8 h-8 text-green-500 mx-auto" />
@@ -83,22 +99,22 @@ const FileUpload = ({ label, file, onChange, accept = "image/*" }) => (
 );
 
 const LeadForm = () => {
-  const [activeTab, setActiveTab] = useState('basic');
+  const [activeTab, setActiveTab] = useState("basic");
   const [aadhaarExtract, setAadhaarExtract] = useState(true);
   const [panExtract, setPanExtract] = useState(true);
   const [kycData, setKycData] = useState({
     aadhaarFront: null,
     aadhaarBack: null,
     pan: null,
-    name: '',
-    gender: '',
-    dob: '',
-    aadhaarNumber: '',
-    address: '',
-    panNumber: '',
-    panHolderName: '',
-    panFatherName: '',
-    panDob: '',
+    name: "",
+    gender: "",
+    dob: "",
+    aadhaarNumber: "",
+    address: "",
+    panNumber: "",
+    panHolderName: "",
+    panFatherName: "",
+    panDob: "",
   });
   const [formData, setFormData] = useState({
     leadImage: null,
@@ -121,48 +137,48 @@ const LeadForm = () => {
 
   // Define tabs array
   const tabs = [
-    { id: 'basic', label: 'Basic Info', icon: UserIcon },
-    { id: 'kyc', label: 'KYC', icon: CreditCardIcon },
-    { id: 'documents', label: 'Documents', icon: FileTextIcon },
+    { id: "basic", label: "Basic Info", icon: UserIcon },
+    { id: "kyc", label: "KYC", icon: CreditCardIcon },
+    { id: "documents", label: "Documents", icon: FileTextIcon },
   ];
 
   const documentOptions = [
-    { value: 'aadhar_card', label: 'Aadhaar Card' },
-    { value: 'pan_card', label: 'PAN Card' },
-    { value: 'bank_statement', label: 'Bank Statement' },
-    { value: 'salary_slip', label: 'Salary Slip' },
-    { value: 'property_documents', label: 'Property Documents' },
+    { value: "aadhar_card", label: "Aadhaar Card" },
+    { value: "pan_card", label: "PAN Card" },
+    { value: "bank_statement", label: "Bank Statement" },
+    { value: "salary_slip", label: "Salary Slip" },
+    { value: "property_documents", label: "Property Documents" },
   ];
 
   // Static fields definition
   const staticBasicFields = [
-    { name: 'leadOwner', label: 'Lead Owner', type: 'text', required: false },
-    { name: 'firstName', label: 'First Name', type: 'text', required: true },
-    { name: 'lastName', label: 'Last Name', type: 'text', required: true },
-    { name: 'email', label: 'Email', type: 'email', required: true },
-    { name: 'mobile', label: 'Mobile', type: 'tel', required: true },
-    { name: 'company', label: 'Company', type: 'text', required: false },
+    { name: "leadOwner", label: "Lead Owner", type: "text", required: false },
+    { name: "firstName", label: "First Name", type: "text", required: true },
+    { name: "lastName", label: "Last Name", type: "text", required: true },
+    { name: "email", label: "Email", type: "email", required: true },
+    { name: "mobile", label: "Mobile", type: "tel", required: true },
+    { name: "company", label: "Company", type: "text", required: false },
   ];
 
   // Memoize handlers
   const handleFormDataChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const handleKycChange = useCallback((e) => {
     const { name, value } = e.target;
-    setKycData(prev => ({ ...prev, [name]: value }));
+    setKycData((prev) => ({ ...prev, [name]: value }));
   }, []);
 
   const handleFileChange = useCallback((e, key) => {
     const file = e.target.files?.[0] || null;
-    setKycData(prev => ({ ...prev, [key]: file }));
+    setKycData((prev) => ({ ...prev, [key]: file }));
   }, []);
 
   const handleImageChange = useCallback((e) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFormData(prev => ({ ...prev, leadImage: e.target.files[0] }));
+      setFormData((prev) => ({ ...prev, leadImage: e.target.files[0] }));
     }
   }, []);
 
@@ -174,28 +190,31 @@ const LeadForm = () => {
       file: file,
       uploadedAt: new Date(),
     };
-    setdocumentsMeta(prev => [...prev, newDocument]);
+    setdocumentsMeta((prev) => [...prev, newDocument]);
     setSelectedDocument(null);
     setFile(null);
   }, [selectedDocument, file]);
 
   const handleRemoveDocument = useCallback((id) => {
-    setdocumentsMeta(prev => prev.filter(doc => doc.id !== id));
+    setdocumentsMeta((prev) => prev.filter((doc) => doc.id !== id));
   }, []);
 
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    try {
-      const payload = { formData, kycData, documentsMeta };
-      console.log("-",payload)
-      const res = await sendDocumenstsDetails(payload);
-      toast.success("Successfully uploaded lead!");
-      console.log(res);
-    } catch (error) {
-      console.error("Submit error:", error);
-      toast.error("Failed to submit lead");
-    }
-  }, [formData, kycData, documentsMeta]);
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      try {
+        const payload = { formData, kycData, documentsMeta };
+        console.log("-", payload);
+        const res = await sendDocumenstsDetails(payload);
+        toast.success("Successfully uploaded lead!");
+        console.log(res);
+      } catch (error) {
+        console.error("Submit error:", error);
+        toast.error("Failed to submit lead");
+      }
+    },
+    [formData, kycData, documentsMeta]
+  );
 
   const handleVerify = useCallback(async () => {
     const body = {
@@ -207,8 +226,8 @@ const LeadForm = () => {
     const verifyPan = async () => {
       const response = await panVerify(body);
       const profileMatches = response?.result?.profileMatch || [];
-      const nameMatch = profileMatches.find(p => p.parameter === "name");
-      const dobMatch = profileMatches.find(p => p.parameter === "dob");
+      const nameMatch = profileMatches.find((p) => p.parameter === "name");
+      const dobMatch = profileMatches.find((p) => p.parameter === "dob");
       if (nameMatch?.matchResult && dobMatch?.matchResult) {
         return "PAN verified successfully!";
       } else {
@@ -216,14 +235,11 @@ const LeadForm = () => {
       }
     };
 
-    toast.promise(
-      verifyPan(),
-      {
-        pending: 'Verifying PAN details...',
-        success: (msg) => msg,
-        error: (err) => err.message || "PAN verification failed",
-      }
-    );
+    toast.promise(verifyPan(), {
+      pending: "Verifying PAN details...",
+      success: (msg) => msg,
+      error: (err) => err.message || "PAN verification failed",
+    });
   }, [kycData]);
 
   // Aadhaar OCR trigger
@@ -237,8 +253,9 @@ const LeadForm = () => {
         try {
           const response = await getKycOcrData(formData);
           if (response?.aadhaarData) {
-            const { name, gender, dob, aadhaarNumber, address } = response.aadhaarData;
-            setKycData(prev => ({
+            const { name, gender, dob, aadhaarNumber, address } =
+              response.aadhaarData;
+            setKycData((prev) => ({
               ...prev,
               name: name || prev.name,
               gender: gender || prev.gender,
@@ -267,7 +284,7 @@ const LeadForm = () => {
           const response = await getKycOcrData(formData);
           if (response?.panData) {
             const { panNumber, dob, name, fatherName } = response.panData;
-            setKycData(prev => ({
+            setKycData((prev) => ({
               ...prev,
               panNumber: panNumber || prev.panNumber,
               panDob: convertToDateInputFormat(dob) || prev.panDob,
@@ -288,7 +305,9 @@ const LeadForm = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-900 mb-2">Onboard Dealers</h1>
+          <h1 className="text-3xl font-bold text-blue-900 mb-2">
+            Onboard Dealers
+          </h1>
         </div>
         <div className="flex justify-center mb-8">
           <div className="flex bg-white rounded-lg p-1 border-gray-300 border-2">
@@ -298,10 +317,11 @@ const LeadForm = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${activeTab === tab.id
-                      ? 'bg-blue-800 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                    }`}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all ${
+                    activeTab === tab.id
+                      ? "bg-blue-800 text-white shadow-sm"
+                      : "text-gray-600 hover:text-gray-800"
+                  }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span className="font-medium">{tab.label}</span>
@@ -312,9 +332,11 @@ const LeadForm = () => {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="space-y-8 w-full">
-            {activeTab === 'basic' && (
+            {activeTab === "basic" && (
               <div className="bg-white rounded-xl border-gray-300 border-2 p-6 space-y-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Basic Information</h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                  Basic Information
+                </h2>
                 <>
                   {/* File Upload for leadImage */}
                   <div className="flex items-center space-x-4">
@@ -355,7 +377,7 @@ const LeadForm = () => {
                         label={field.label}
                         name={field.name}
                         type={field.type}
-                        value={formData[field.name] || ''}
+                        value={formData[field.name] || ""}
                         onChange={handleFormDataChange}
                         required={field.required}
                       />
@@ -364,11 +386,13 @@ const LeadForm = () => {
 
                   {/* Description Field (Textarea) */}
                   <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-700">Description</label>
+                    <label className="text-sm font-medium text-gray-700">
+                      Description
+                    </label>
                     <InputField
                       name="description"
                       type="textarea"
-                      value={formData.description || ''}
+                      value={formData.description || ""}
                       onChange={handleFormDataChange}
                       required={false}
                     />
@@ -376,7 +400,7 @@ const LeadForm = () => {
                 </>
               </div>
             )}
-            {activeTab === 'kyc' && (
+            {activeTab === "kyc" && (
               <div className="space-y-6">
                 <div className="bg-white rounded-xl border-gray-300 border-2 p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -387,12 +411,12 @@ const LeadForm = () => {
                     <FileUpload
                       label="Upload Aadhaar Front"
                       file={kycData.aadhaarFront}
-                      onChange={(e) => handleFileChange(e, 'aadhaarFront')}
+                      onChange={(e) => handleFileChange(e, "aadhaarFront")}
                     />
                     <FileUpload
                       label="Upload Aadhaar Back"
                       file={kycData.aadhaarBack}
-                      onChange={(e) => handleFileChange(e, 'aadhaarBack')}
+                      onChange={(e) => handleFileChange(e, "aadhaarBack")}
                     />
                   </div>
                   <label className="inline-flex items-center mb-5 cursor-pointer">
@@ -420,9 +444,9 @@ const LeadForm = () => {
                       value={kycData.gender}
                       onChange={handleKycChange}
                       options={[
-                        { value: 'Male', label: 'Male' },
-                        { value: 'Female', label: 'Female' },
-                        { value: 'Other', label: 'Other' },
+                        { value: "Male", label: "Male" },
+                        { value: "Female", label: "Female" },
+                        { value: "Other", label: "Other" },
                       ]}
                     />
                     <InputField
@@ -465,7 +489,7 @@ const LeadForm = () => {
                     <FileUpload
                       label="Upload PAN Card"
                       file={kycData.pan}
-                      onChange={(e) => handleFileChange(e, 'pan')}
+                      onChange={(e) => handleFileChange(e, "pan")}
                     />
                   </div>
                   <label className="inline-flex items-center mb-5 cursor-pointer">
@@ -519,13 +543,17 @@ const LeadForm = () => {
                 </div>
               </div>
             )}
-            {activeTab === 'documents' && (
+            {activeTab === "documents" && (
               <div className="bg-white rounded-xl border-gray-300 border-2 p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Additional Documents</h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                  Additional Documents
+                </h2>
                 <div className="space-y-4 mb-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">Document Type</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        Document Type
+                      </label>
                       <Select
                         value={selectedDocument}
                         onChange={(option) => setSelectedDocument(option)}
@@ -537,7 +565,9 @@ const LeadForm = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-sm font-medium text-gray-700">Upload File</label>
+                      <label className="text-sm font-medium text-gray-700">
+                        Upload File
+                      </label>
                       <input
                         type="file"
                         onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -557,14 +587,23 @@ const LeadForm = () => {
                 </div>
                 {documentsMeta.length > 0 && (
                   <div className="space-y-3">
-                    <h3 className="font-medium text-gray-800">Uploaded Documents</h3>
+                    <h3 className="font-medium text-gray-800">
+                      Uploaded Documents
+                    </h3>
                     {documentsMeta.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
                         <div className="flex items-center space-x-3">
                           <FileTextIcon className="w-5 h-5 text-blue-500" />
                           <div>
-                            <p className="font-medium text-gray-800">{doc.type.label}</p>
-                            <p className="text-sm text-gray-600">{doc.file.name}</p>
+                            <p className="font-medium text-gray-800">
+                              {doc.type.label}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {doc.file.name}
+                            </p>
                           </div>
                         </div>
                         <button
