@@ -1,6 +1,6 @@
 // src/pages/SuperadminCreateUser.jsx
 import { useState } from "react";
-import { createUser } from "../api/api"; // Assumes this returns response.data
+import { createUser } from "../../api/api"; // Assumes this returns response.data
 import { toast } from "react-toastify";
 import Select from 'react-select';
 const ROLE_OPTIONS = ["SuperAdmin", "Admin", "Manager", "Agent", "User"]; // Title Case as requested

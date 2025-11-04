@@ -15,7 +15,7 @@ import AdminDashboard from "../pages/Admin/Dashboard";
 import Adminleads from "../pages/Admin/leads";
 import Product from "../pages/Admin/Product";
 
-import CreateUser from "../pages/createUser";
+import CreateUser from "../pages/UserCreation/createUser";
 import DealerOnboarding from "../pages/Dealer/DealerOnboarding";
 const AppRoutes = () => {
   return (
